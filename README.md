@@ -217,6 +217,209 @@ const element = screen.getByTestId('custom-testid')
     7. getByTitle
     8. getByTestId (specially when dynamic)
 
+#### Query Multiple elements
+* same as above but for multiple elements
+* Test of role that it shoudl render all the elements correctly
+```
+// component
+const Skills = ({skills}) => {
+    return (
+        <>
+            <ul>
+                skills.map((skill) => {
+                    return <li key='skill'>skill</li>
+                })
+            </ul>
+        </>
+    )
+}
 
+// test
+describe('skills', () => {
+    const skills = ['React', 'Angular', 'Vue']
+    
+    test('it renders correctly', () => {
+        render(<Skills skills={skills} />)
+        const element = screen.getByRole('list')
+        expect(element).toBeInTheDocument()
+    })
 
+    test('it should have all the list items', () => {
+        render(<Skills skills={skills}/>)
+        const element = screen.getAllByRole('listitem')
+        expect(element).toHaveLength(skills.length)
+    })
+})
+```
+
+#### TextMatch
+* First argument in the test could be
+    * string
+    * regex
+    * function
+```
+screen.getByText('Hello') //string
+screen.getByText(/Hello/i) //regex
+screen.getByText((content) => content.startsWith('Hello')) //function
+```
+#### queryBy
+* Let a component having if not user, show logged in button, otherwise show start button
+```
+const Skills = ({skills}) => {
+    return (
+        const [isLogged, setIsLogged] = useState(false)
+        <>
+            <ul>
+                skills.map((skill) => {
+                    return <li key='skill'>skill</li>
+                })
+            </ul>
+        </>
+        {
+            isLogged ? (<button>Start</button>) : (<button onClick={()=>setIsLogged(true)}>Login</button>)
+        }
+    )
+}
+
+// test
+describe('skills', () => {
+    const skills = ['React', 'Angular', 'Vue']
+    
+    test('it renders correctly', () => {
+        render(<Skills skills={skills} />)
+        const element = screen.getByRole('list')
+        expect(element).toBeInTheDocument()
+    })
+
+    test('it should have all the list items', () => {
+        render(<Skills skills={skills}/>)
+        const element = screen.getAllByRole('listitem')
+        expect(element).toHaveLength(skills.length)
+    })
+
+    test('render login button', () => {
+        render(<Skills skills={skills} />)
+        const element = screen.getByRole('button',{
+            name: 'Login'
+        })
+        expect(element).toBeInTheDocument()
+    })
+
+    test('render start button', () => {
+        render(<Skills skills={skills} />)
+        const element = screen.queryByRole('button',{
+            name: 'Start'
+        })
+        expect(element).not.toBeInTheDocument()
+    })
+})
+```
+#### findBy
+* If we have to wait for some event to occur
+* Asynchronous requests
+```
+// Component
+const [isLogged, setIsLogged] = useState(false)
+useEffect(() => {
+    setTimeout(() => {
+        setIsLogged(true)
+    }, 1001)
+},[])
+
+//test
+test('render start button', async () => {
+        render(<Skills skills={skills} />)
+        const element = await screen.findBy('button',{
+            name: 'Start'
+        }, {
+            timeout: 2000
+        })
+        expect(element).toBeInTheDocument()
+    })
+```
+#### Debugging
+* screen.debug() b/w two points
+* Testig playground chrome extension
+#### User Interations
+* user-event testing library
+    * comes with ```create-react-app```
+* user-event vs fireevent
+    * user-event is more superior
+    * fire event for one event only unlike user event having multiple interactions with extra checks
+#### Pointer interactions
+* When user clicks, count should be incremented to 1
+```
+// component
+const Counter = () => {
+    const [count, setCount] = useState(0)
+    return (
+        <>
+            <h2>{count}</h2>
+            <button onClick={() => setCount(count+1)}>Increment</button>
+        </>
+    )
+}
+
+// test
+import {render, screen} from '@testing-library/react'
+import {user} from '@testing-library/user-event'
+import {Counter} from 'src'
+
+describe('counter', () => {
+    test('renders correctly', () => {
+        render(<Counter />)
+        const element = screen.getByRole('heading')
+        expect(element).toBeInTheDocument()
+        const incrBtn = screen.getByRole('button', {
+            name: 'Increment'
+        })
+        expect(incrBtn).toBeInTheDocument()
+    })
+
+    test('renders a count to be 0', () => {
+        render(<Counter />)
+        const element = screen.getByRole('heading')
+        expect(element).toHaveTextContent('0')
+    })
+
+    test('Renders a count 1 after a button is clicked', async () => {
+        user.setup()
+        render(<Counter />)
+        const element = screen.getByRole('button', {
+            name: 'Increment'
+        })
+        await user.click(element)
+        expect(element).toHaveTextContent('1')
+    })
+})
+```
+#### Keyboard events
+* On button click, set the value equals the value in input box
+```
+const Counter = () => {
+    const [count, setCount] = useState(0)
+    return (
+        <>
+            <h2>{count}</h2>
+            <input type='number' name='count' value='count' onChange={(e) => setCount(parseInt(e.target.value))}/>
+            <button onClick={() => setCount(count)}>Set</button>
+        </>
+    )
+}
+
+// test
+test('element equals in input box to be displayed in h2', async () => {
+    user.setup()
+    render(<Counter />)
+    const elementInput = screen.getByRole('spinbutton')
+    await user.type(elementInput, '10')
+    expect(elementInput).toHaveValue(10)
+    const elementBtn = screen.getByRole('button', {
+        name: 'Set'
+    })
+    await user.click(elementBtn)
+    const head = screen.getByRole('heading')
+    expect(head).toHaveTextContent('10')
+})
+```
 
