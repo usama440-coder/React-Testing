@@ -422,4 +422,16 @@ test('element equals in input box to be displayed in h2', async () => {
     expect(head).toHaveTextContent('10')
 })
 ```
+#### Fire Events
+* Should be able to type in an input
+```
+import {fireEvent} from '@testing-library/react'
 
+// second props is let say to have useState hook
+test('it should be able to type in value', () => {
+    render(<AddInput tasks={[]} setTasks={()=>{}}/>)
+    const inputElement = screen.getByPlaceholderText('Add a new task here...')
+    fireEvent.change(inputElement, {target: {value:"Add a task"}})
+    expect(inputElement.value).toBe("Add a task")
+})
+```
